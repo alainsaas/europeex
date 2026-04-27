@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#9dc3fb">
+<title>EuropeEx - Track your Europe experience</title>
+<meta name="description" content="Track your European travel experience level. Click regions to mark where you've lived, stayed, visited, alighted, or passed through.">
+<link rel="icon" type="image/png" href="./favicon-512.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <nav class="nav">
+        <a href="#" class="nav-brand" onclick="return false">EuropeEx</a>
+        <span class="nav-sep">|</span>
+        <a href="#" class="nav-link" id="aboutLink" onclick="toggleAbout(); return false;">About</a>
+      </nav>
+      <h1 class="level-title" id="levelTitle">EU Level <span id="levelScore">0</span></h1>
+    </header>
+
+    <div class="map-container" id="mapContainer">
+      <div class="map-wrapper" id="mapWrapper">
+        <svg id="mapSvg"></svg>
+      </div>
+    </div>
+
+    <!-- Level popup -->
+    <div class="popup" id="popup">
+      <div class="popup-header">
+        <span class="popup-title" id="popupTitle">@ Region</span>
+        <button class="popup-close" id="popupClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="popup-levels">
+        <button class="popup-level level-5" data-level="5">Lived there</button>
+        <button class="popup-level level-4" data-level="4">Stayed there</button>
+        <button class="popup-level level-3" data-level="3">Visited there</button>
+        <button class="popup-level level-2" data-level="2">Alighted there</button>
+        <button class="popup-level level-1" data-level="1">Passed there</button>
+        <button class="popup-level level-0" data-level="0">Never been there</button>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend" id="legend">
+      <div class="legend-item"><span class="swatch swatch-5"></span><span class="legend-label">Lived there</span><span class="legend-level">Level: 5</span></div>
+      <div class="legend-item"><span class="swatch swatch-4"></span><span class="legend-label">Stayed there</span><span class="legend-level">Level: 4</span></div>
+      <div class="legend-item"><span class="swatch swatch-3"></span><span class="legend-label">Visited there</span><span class="legend-level">Level: 3</span></div>
+      <div class="legend-item"><span class="swatch swatch-2"></span><span class="legend-label">Alighted there</span><span class="legend-level">Level: 2</span></div>
+      <div class="legend-item"><span class="swatch swatch-1"></span><span class="legend-label">Passed there</span><span class="legend-level">Level: 1</span></div>
+      <div class="legend-item"><span class="swatch swatch-0"></span><span class="legend-label">Never been there</span><span class="legend-level">Level: 0</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls" id="controls">
+      <div class="zoom-pair">
+        <button class="control-btn control-btn-half" id="zoomInBtn">+</button>
+        <button class="control-btn control-btn-half" id="zoomOutBtn">&minus;</button>
+      </div>
+      <select id="langSelect" class="control-btn">
+        <option value="en">English</option>
+        <option value="local">Local</option>
+      </select>
+      <button class="control-btn" id="saveUrlBtn">Save Map</button>
+      <button class="control-btn" id="saveImgBtn">Save PNG</button>
+      <button class="control-btn" id="addNameBtn">Add Name</button>
+      <button class="control-btn control-btn-reset" id="resetBtn">Reset</button>
+    </div>
+
+    <!-- Name input modal -->
+    <div class="modal-overlay" id="nameModal">
+      <div class="modal">
+        <h3>Your Name</h3>
+        <input type="text" id="nameInput" placeholder="Enter your name" maxlength="30">
+        <div class="modal-actions">
+          <button class="modal-btn" id="nameOk">OK</button>
+          <button class="modal-btn modal-btn-cancel" id="nameCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About modal -->
+    <div class="modal-overlay" id="aboutModal">
+      <div class="modal modal-about">
+        <h3>About EuropeEx</h3>
+        <p>Track your European travel experience. Click any region on the map to set your experience level from 0 (never been) to 5 (lived there).</p>
+        <p>Your map state is saved entirely in the URL: bookmark it or share it with friends.</p>
+        <p>Created by <a href="https://saasontech.com/" target="_blank" rel="noopener noreferrer">Alan Saas</a>. Originally from <a href="https://zhung.com.tw/japanex/" target="_blank" rel="noopener noreferrer">JapanEx</a>.</p>
+        <button class="modal-btn" id="aboutClose">Close</button>
+      </div>
+    </div>
+
+    <!-- Author display -->
+    <div class="author-name" id="authorName"></div>
+
+    <!-- Save URL modal -->
+    <div class="modal-overlay" id="saveModal">
+      <div class="modal modal-save">
+        <h3>Map Saved</h3>
+        <p>The URL below contains your full map state. Bookmark it or share it with friends.</p>
+        <textarea id="saveUrlField" readonly class="save-url-input" rows="4"></textarea>
+        <div class="save-actions">
+          <button class="modal-btn" id="copyUrlBtn">Copy URL</button>
+          <button class="modal-btn modal-btn-cancel" id="saveModalClose">Close</button>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="./assets/regions.js"></script>
+  <script src="./assets/europe-geo.js"></script>
+  <script src="./app.js"></script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
